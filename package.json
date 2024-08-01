@@ -1,0 +1,33 @@
+{
+  "name": "verdaccio-az-storage",
+  "version": "1.0.0",
+  "description": "Azure Storage plugin for Verdaccio",
+  "license": "MIT",
+  "author": {
+    "name": "Voltstro",
+    "email": "me@voltstro.dev"
+  },
+  "repository": {
+    "url": "https://github.com/Voltstro/verdaccio-az-storage",
+    "type": "git"
+  },
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@azure/storage-blob": "^12.24.0",
+    "@verdaccio/commons-api": "10.2.0",
+    "@verdaccio/streams": "10.2.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@verdaccio/legacy-types": "^1.0.1",
+    "typescript": "^5.5.4"
+  },
+  "scripts": {
+    "build": "tsc"
+  },
+  "packageManager": "yarn@1.22.22+sha1.ac34549e6aa8e7ead463a7407e1c7390f61a6610"
+}
