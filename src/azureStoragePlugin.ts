@@ -1,3 +1,4 @@
+import { join } from 'path';
 import {
     Config,
     IPackageStorage,
@@ -7,8 +8,7 @@ import {
     PluginOptions,
     Token,
     onEndSearchPackage,
-    onSearchPackage,
-    onValidatePackage
+    onSearchPackage
 } from '@verdaccio/legacy-types';
 import { BlobServiceClient, BlockBlobClient, ContainerClient } from '@azure/storage-blob';
 import { AzureStoragePluginConfig } from './azureStoragePluginConfig';
@@ -36,7 +36,6 @@ export class AzureStoragePlugin implements IPluginStorage<AzureStoragePluginConf
             throw new Error();
         }
             
-
         //Copy config
         this.config = Object.assign(config, config.store['az-storage']);
 
@@ -52,7 +51,9 @@ export class AzureStoragePlugin implements IPluginStorage<AzureStoragePluginConf
             this.logger.error(`${LOGGER_PREFIX}: Connection string is required! Either set 'connectionString' in the config, or set 'AZ_STORAGE_CONNECTION_STRING' environment variable.`);
             throw new Error();
         }
-            
+        
+        if(!this.config.packagesDir)
+            this.config.packagesDir = 'packages';
 
         //Container name
         if(!this.config.containerName) {
@@ -140,18 +141,61 @@ export class AzureStoragePlugin implements IPluginStorage<AzureStoragePluginConf
     /**
      * Sets Verdaccio's secret
      */
-    public async setSecret(secret: string): Promise<any> {
+    public async setSecret(secret: string): Promise<void> {
         (await this.getOrCreateLocalStorage()).secret = secret;
 
         await this.writeLocalStorage();
     }
 
+    /**
+     * Gets IPackageStorage for a package
+     */
     public getPackageStorage(packageInfo: string): IPackageStorage {
-        return new AzureStoragePackageManager(packageInfo, this.logger, this.azureContainerClient);
+        return new AzureStoragePackageManager(packageInfo, this.config, this.logger, this.azureContainerClient);
     }
 
-    public search(onPackage: onSearchPackage, onEnd: onEndSearchPackage, validateName: onValidatePackage): void {
-        throw new Error('Method not implemented.');
+    /**
+     * Searching
+     */
+    public async search(onPackage: onSearchPackage, onEnd: onEndSearchPackage): Promise<void> {
+        try {
+            const localStorage = await this.getOrCreateLocalStorage();
+            const packageList = localStorage.list as string[];
+
+            this.logger.debug({ count: packageList.length }, `${LOGGER_PREFIX}: Got @{count} packages for searching.`);
+
+            for(const packageName of packageList) {
+                const packagePath = join(this.config.packagesDir, packageName, 'package.json');
+                const packageBlobClient = this.azureContainerClient.getBlobClient(packagePath);
+                const exists = await packageBlobClient.exists();
+
+                if(exists) {
+                    const packageProperties = await packageBlobClient.getProperties();
+                    onPackage({
+                        name: packageName,
+                        time: {
+                            created: packageProperties.createdOn!.toISOString(),
+                            modified: packageProperties.lastModified!.toISOString(),
+                        },
+                        versions: {},
+                        'dist-tags': {},
+                        _distfiles: {},
+                        _attachments: {},
+                        _uplinks: {},
+                        _rev: ''
+                    }, () => {});
+                    this.logger.debug({ packageName }, `${LOGGER_PREFIX}: Got package @{packageName}`);
+                    continue;
+                }
+
+                this.logger.warn({ packageName }, `${LOGGER_PREFIX}: Have package @{packageName}, which does not have matching package data!`);
+            }
+        } catch(ex) {
+            onEnd(ex);
+            return;
+        }
+
+        onEnd(null);
     }
 
     public saveToken(): Promise<Token> {

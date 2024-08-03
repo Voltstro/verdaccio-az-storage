@@ -15,22 +15,23 @@ import { BlockBlobClient, ContainerClient } from '@azure/storage-blob';
 import { ReadTarball, UploadTarball } from '@verdaccio/streams';
 import { getConflict } from '@verdaccio/commons-api';
 import { LOGGER_PREFIX } from './constants';
-
-const PACKAGES_DIR = 'packages/';
+import { AzureStoragePluginConfig } from './azureStoragePluginConfig';
 
 export default class AzureStoragePackageManager implements ILocalPackageManager {
     public logger: Logger;
 
     private readonly packageName: string;
+    private readonly config: AzureStoragePluginConfig;
     private readonly containerClient: ContainerClient;
     private readonly packageBlobClient: BlockBlobClient;
 
-    public constructor(packageName: string, logger: Logger, containerClient: ContainerClient) {
+    public constructor(packageName: string, config: AzureStoragePluginConfig, logger: Logger, containerClient: ContainerClient) {
         this.logger = logger;
 
         this.packageName = packageName;
+        this.config = config;
         this.containerClient = containerClient;
-        this.packageBlobClient = containerClient.getBlockBlobClient(join(PACKAGES_DIR, packageName, 'package.json'));
+        this.packageBlobClient = containerClient.getBlockBlobClient(join(this.config.packagesDir, packageName, 'package.json'));
     }
 
     /**
@@ -45,7 +46,7 @@ export default class AzureStoragePackageManager implements ILocalPackageManager 
         });
         
         const promise = new Promise((resolve) => {
-            const packageClient = this.containerClient.getBlockBlobClient(join(PACKAGES_DIR, this.packageName, name));
+            const packageClient = this.containerClient.getBlockBlobClient(join(this.config.packagesDir, this.packageName, name));
             packageClient.uploadStream(uploadStream, undefined, undefined, {
                 blobHTTPHeaders: {
                     blobContentType: 'application/x-compressed'
@@ -83,7 +84,7 @@ export default class AzureStoragePackageManager implements ILocalPackageManager 
         const readTarballStream = new ReadTarball({});
 
         const promise = new Promise((resolve) => {
-            const packageClient = this.containerClient.getBlockBlobClient(join(PACKAGES_DIR, this.packageName, name));
+            const packageClient = this.containerClient.getBlockBlobClient(join(this.config.packagesDir, this.packageName, name));
             packageClient.downloadToBuffer().then((buffer) => resolve(buffer));
         });
 
@@ -139,7 +140,7 @@ export default class AzureStoragePackageManager implements ILocalPackageManager 
      * Deletes package data
      */
     public deletePackage(fileName: string, callback: CallbackAction): void {
-        const packageClient = this.containerClient.getBlockBlobClient(join(PACKAGES_DIR, this.packageName, fileName));
+        const packageClient = this.containerClient.getBlockBlobClient(join(this.config.packagesDir, this.packageName, fileName));
         packageClient.delete().then(() => {
             this.logger.debug(`${LOGGER_PREFIX}: Finished deleting package data`);
             callback(null);
