@@ -18,7 +18,7 @@ import { LOGGER_PREFIX } from './constants';
 
 const PACKAGES_DIR = 'packages/';
 
-export default class AzureBlobPackageManager implements ILocalPackageManager {
+export default class AzureStoragePackageManager implements ILocalPackageManager {
     public logger: Logger;
 
     private readonly packageName: string;

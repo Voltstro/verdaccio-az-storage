@@ -1,6 +1,6 @@
 import { Config } from '@verdaccio/legacy-types';
 
-export interface AzureBlobConfig extends Config {
+export interface AzureStoragePluginConfig extends Config {
     connectionString: string;
     containerName: string
 }
