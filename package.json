@@ -23,7 +23,10 @@
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
     "@verdaccio/legacy-types": "^1.0.1",
+    "eslint": "^9.8.0",
     "typescript": "^5.5.4"
   },
   "scripts": {

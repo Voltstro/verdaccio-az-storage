@@ -1,22 +1,17 @@
 import { join } from 'path';
 import {
-    Callback,
     Logger,
     Package,
     ILocalPackageManager,
     CallbackAction,
     ReadPackageCallback,
-    IReadTarball,
     IUploadTarball,
     Manifest,
     PackageTransformer,
     StorageUpdateCallback,
     StorageWriteCallback,
-    Versions,
 } from '@verdaccio/legacy-types';
-
-import { AzureBlobConfig } from './storageConfig';
-import { BlobServiceClient, BlockBlobClient, ContainerClient } from '@azure/storage-blob';
+import { BlockBlobClient, ContainerClient } from '@azure/storage-blob';
 import { ReadTarball, UploadTarball } from '@verdaccio/streams';
 import { getConflict } from '@verdaccio/commons-api';
 import { LOGGER_PREFIX } from './constants';
@@ -49,22 +44,21 @@ export default class AzureBlobPackageManager implements ILocalPackageManager {
             streamEnded = 1;
         });
         
-        const promise = new Promise(async (resolve) => {
+        const promise = new Promise((resolve) => {
             const packageClient = this.containerClient.getBlockBlobClient(join(PACKAGES_DIR, this.packageName, name));
-            await packageClient.uploadStream(uploadStream, undefined, undefined, {
+            packageClient.uploadStream(uploadStream, undefined, undefined, {
                 blobHTTPHeaders: {
                     blobContentType: 'application/x-compressed'
                 }
-            });
-
-            resolve(undefined);
-        })
+            })
+                .then(() => resolve(undefined));
+        });
 
         uploadStream.done = (): void => {
             const onEnd = async (): Promise<void> => {
                 try {
                     await promise;
-                    this.logger.debug(`${LOGGER_PREFIX}: Finished uploading package tarball`)
+                    this.logger.debug(`${LOGGER_PREFIX}: Finished uploading package tarball`);
                     uploadStream.emit('success');
                 } catch (error) {
                     this.logger.error( { error }, `${LOGGER_PREFIX}: Error creating package tarball: @{error}`);
@@ -88,19 +82,19 @@ export default class AzureBlobPackageManager implements ILocalPackageManager {
     public readTarball(name: string): ReadTarball {
         const readTarballStream = new ReadTarball({});
 
-        const promise = new Promise(async (resolve) => {
+        const promise = new Promise((resolve) => {
             const packageClient = this.containerClient.getBlockBlobClient(join(PACKAGES_DIR, this.packageName, name));
-            const packageBuffer = await packageClient.downloadToBuffer();
-
-            resolve(packageBuffer);
+            packageClient.downloadToBuffer().then((buffer) => resolve(buffer));
         });
 
-        readTarballStream.emit('pipe', async (src) => {
+        readTarballStream.emit('pipe', async () => {
             try {
                 const data = await promise;
-                src = data;
-                this.logger.debug(`${LOGGER_PREFIX}: Finished reading package tarball`)
-                return true;
+                //src = data;
+                this.logger.debug(`${LOGGER_PREFIX}: Finished reading package tarball`);
+
+                return data;
+                //return true;
             } catch(error) {
                 this.logger.error({ error }, `${LOGGER_PREFIX}: Error reading package tarball: @{error}`);
                 readTarballStream.emit('error', error);
@@ -120,7 +114,7 @@ export default class AzureBlobPackageManager implements ILocalPackageManager {
         }).catch((error) => {
             this.logger.error({ error }, `${LOGGER_PREFIX}: Error reading package data: @{error}`);
             callback(error);
-        })
+        });
     }
 
     /**
@@ -130,7 +124,7 @@ export default class AzureBlobPackageManager implements ILocalPackageManager {
         this.packageBlobClient.exists().then((exists) => {
             //Make sure package doesn't already exist
             if(exists) {
-                cb(getConflict('Package data already exists'))
+                cb(getConflict('Package data already exists'));
                 return;
             }
 
@@ -150,8 +144,8 @@ export default class AzureBlobPackageManager implements ILocalPackageManager {
             this.logger.debug(`${LOGGER_PREFIX}: Finished deleting package data`);
             callback(null);
         }).catch((error) => {
-            this.logger.error({error}, `${LOGGER_PREFIX}: Error deleting package data: @{error}`);
-            callback(error)
+            this.logger.error({ error }, `${LOGGER_PREFIX}: Error deleting package data: @{error}`);
+            callback(error);
         });
     }
 
@@ -166,14 +160,14 @@ export default class AzureBlobPackageManager implements ILocalPackageManager {
         this.getPackageData().then((packageData) => {
             updateHandler(packageData, (error) => {
                 if(error) {
-                    this.logger.error({error}, `${LOGGER_PREFIX}: Error updating package data: @{error}`);
+                    this.logger.error({ error }, `${LOGGER_PREFIX}: Error updating package data: @{error}`);
                     onEnd(error);
                     return;
                 }
 
                 const transformedPackage = transformPackage(packageData);
                 onWrite(name, transformedPackage, onEnd);
-            })
+            });
         });
     }
 
@@ -185,7 +179,7 @@ export default class AzureBlobPackageManager implements ILocalPackageManager {
             this.logger.debug(`${LOGGER_PREFIX}: Finished saving package data`);
             callback(null);
         }).catch((error) => {
-            this.logger.error({error}, `${LOGGER_PREFIX}: Error saving package data: @{error}`);
+            this.logger.error({ error }, `${LOGGER_PREFIX}: Error saving package data: @{error}`);
             callback(error);
         });
     }
@@ -202,11 +196,11 @@ export default class AzureBlobPackageManager implements ILocalPackageManager {
             //Precreate
             packageData = {
                 name: this.packageName,
-                versions: [] as any,
-                'dist-tags': [] as any,
-                _distfiles: [] as any,
-                _attachments: [] as any,
-                _uplinks: [] as any,
+                versions: {},
+                'dist-tags': {},
+                _distfiles: {},
+                _attachments: {},
+                _uplinks: {},
                 _rev: ''
             };
 
