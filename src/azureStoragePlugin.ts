@@ -104,10 +104,23 @@ export class AzureStoragePlugin implements IPluginStorage<AzureStoragePluginConf
     }
 
     /**
-     * Removes a package from he list
+     * Removes a package from the list
      */
     public remove(name: string, callback: Function): void {
-        throw new Error('Method not implemented.');
+        this.getOrCreateLocalStorage().then(async (data) => {
+            const pkgIndex = data.list.indexOf(name);
+            if (pkgIndex !== -1) {
+                data.list.splice(pkgIndex, 1);
+                this.logger.debug({ name }, `${LOGGER_PREFIX}: Removed package @{name}`);
+            }
+
+            try {
+                await this.writeLocalStorage();
+                callback(null);
+            } catch (err) {
+                callback(err);
+            }
+        });
     }
 
     /**

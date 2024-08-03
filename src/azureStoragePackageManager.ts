@@ -150,7 +150,7 @@ export default class AzureStoragePackageManager implements ILocalPackageManager 
     }
 
     public removePackage(callback: CallbackAction): void {
-        throw new Error('Method not implemented.');
+        callback(null);
     }
 
     /**
