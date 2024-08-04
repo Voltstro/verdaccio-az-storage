@@ -11,7 +11,7 @@ import {
     StorageUpdateCallback,
     StorageWriteCallback,
 } from '@verdaccio/legacy-types';
-import { BlockBlobClient, ContainerClient } from '@azure/storage-blob';
+import { BlobHTTPHeaders, BlockBlobClient, ContainerClient } from '@azure/storage-blob';
 import { ReadTarball, UploadTarball } from '@verdaccio/streams';
 import { getConflict } from '@verdaccio/commons-api';
 import { LOGGER_PREFIX } from './constants';
@@ -47,10 +47,19 @@ export default class AzureStoragePackageManager implements ILocalPackageManager 
         
         const promise = new Promise((resolve) => {
             const packageClient = this.containerClient.getBlockBlobClient(join(this.config.packagesDir, this.packageName, name));
+
+            const httpHeaders: BlobHTTPHeaders = {
+                blobContentType: 'application/x-compressed'
+            };
+    
+            if(this.config.cachePackageTime) {
+                httpHeaders.blobCacheControl = `public,max-time=${this.config.cachePackageTime}`;
+                this.logger.debug(`${LOGGER_PREFIX}: Using ${this.config.cachePackageTime} seconds as cache-control on package`);
+            }
+                
+
             packageClient.uploadStream(uploadStream, undefined, undefined, {
-                blobHTTPHeaders: {
-                    blobContentType: 'application/x-compressed'
-                }
+                blobHTTPHeaders: httpHeaders
             })
                 .then(() => resolve(undefined));
         });
@@ -213,10 +222,18 @@ export default class AzureStoragePackageManager implements ILocalPackageManager 
 
     private async writePackageData(packageData: Package): Promise<void> {
         const jsonBuffer = Buffer.from(JSON.stringify(packageData), 'utf-8');
+
+        const httpHeaders: BlobHTTPHeaders = {
+            blobContentType: 'application/json'
+        };
+
+        if(this.config.cachePackageDataTime) {
+            httpHeaders.blobCacheControl = `public,max-time=${this.config.cachePackageDataTime}`;
+            this.logger.debug(`${LOGGER_PREFIX}: Using ${this.config.cachePackageDataTime} seconds as cache-control on package data`);
+        }  
+
         await this.packageBlobClient.uploadData(jsonBuffer, {
-            blobHTTPHeaders: {
-                blobContentType: 'application/json'
-            }
+            blobHTTPHeaders: httpHeaders
         });
     }
 }
