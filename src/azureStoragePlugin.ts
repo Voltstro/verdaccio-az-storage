@@ -10,12 +10,11 @@ import {
     onEndSearchPackage,
     onSearchPackage
 } from '@verdaccio/legacy-types';
-import { BlobServiceClient, BlockBlobClient, ContainerClient } from '@azure/storage-blob';
+import { BlobServiceClient, ContainerClient } from '@azure/storage-blob';
 import { AzureStoragePluginConfig } from './azureStoragePluginConfig';
 import AzureStoragePackageManager from './azureStoragePackageManager';
 import { LOGGER_PREFIX } from './constants';
-
-const DB_FILE_NAME = '.verdaccio-db.json';
+import { AppConfigLocalStorageProvider, ILocalStorageProvider, StorageBlobLocalStorageProvider } from './localStorage';
 
 export class AzureStoragePlugin implements IPluginStorage<AzureStoragePluginConfig> {
     public logger: Logger;
@@ -23,10 +22,11 @@ export class AzureStoragePlugin implements IPluginStorage<AzureStoragePluginConf
     public version?: string | undefined;
 
     private localStorage?: LocalStorage;
-    private localStorageBlobClient: BlockBlobClient;
 
     private azureBlobClient: BlobServiceClient;
     private azureContainerClient: ContainerClient;
+
+    private localStorageProvider: ILocalStorageProvider;
 
     public constructor(config: Config, options: PluginOptions<AzureStoragePluginConfig>) {
         this.logger = options.logger;
@@ -39,7 +39,7 @@ export class AzureStoragePlugin implements IPluginStorage<AzureStoragePluginConf
         //Copy config
         this.config = Object.assign(config, config.store['az-storage']);
 
-        //Try to get connection string
+        //Try to get connection string for storage account
         let connectionString = process.env.AZ_STORAGE_CONNECTION_STRING;
         if(!connectionString)
         {
@@ -47,13 +47,11 @@ export class AzureStoragePlugin implements IPluginStorage<AzureStoragePluginConf
             connectionString = this.config.connectionString;
         }
 
+        //None is set at all, quit
         if(!connectionString) {
             this.logger.error(`${LOGGER_PREFIX}: Connection string is required! Either set 'connectionString' in the config, or set 'AZ_STORAGE_CONNECTION_STRING' environment variable.`);
             throw new Error();
         }
-        
-        if(!this.config.packagesDir)
-            this.config.packagesDir = 'packages';
 
         //Container name
         if(!this.config.containerName) {
@@ -76,12 +74,19 @@ export class AzureStoragePlugin implements IPluginStorage<AzureStoragePluginConf
             throw ex;
         }
 
-        try {
-            this.localStorageBlobClient = this.azureContainerClient.getBlockBlobClient(DB_FILE_NAME);
-        } catch(ex) {
-            this.logger.error({ dbFile: DB_FILE_NAME, ex }, `${LOGGER_PREFIX}: Error creating Azure storage blob client for @{dbFile}! @{ex}`);
-            throw ex;
+        //Create local storage provider
+        const appConfigConnectionString = process.env.AZ_STORAGE_APP_CONFIG_CONNECTION_STRING ?? this.config.appConfigConnectionString;
+        if(appConfigConnectionString) {
+            this.localStorageProvider = new AppConfigLocalStorageProvider(this.logger, appConfigConnectionString);
+            this.logger.info(`${LOGGER_PREFIX}: Using Azure app configuration for local storage`);
+        } else {
+            this.localStorageProvider = new StorageBlobLocalStorageProvider(this.logger, this.azureContainerClient);
+            this.logger.info(`${LOGGER_PREFIX}: Using Azure storage blob for local storage`);
         }
+
+        //Default value for packagesDir
+        if(!this.config.packagesDir)
+            this.config.packagesDir = 'packages';
     }
 
     /**
@@ -215,20 +220,17 @@ export class AzureStoragePlugin implements IPluginStorage<AzureStoragePluginConf
      */
     private async getOrCreateLocalStorage(): Promise<LocalStorage> {
         if(!this.localStorage) {
-            const exists = await this.localStorageBlobClient.exists();
-            if(exists) {
-                //DB file exists in container, fetch it
-                this.logger.info(`${LOGGER_PREFIX}: Getting local storage...`);
-                const blob = await this.localStorageBlobClient.downloadToBuffer();
-                const jsonRaw = blob.toString('utf-8');
+            try {
+                this.localStorage = await this.localStorageProvider.getLocalStorage();
+            } catch(ex) {
+                this.logger.error({ ex }, `${LOGGER_PREFIX}: Error in getting local storage from local storage provider! @{ex}`);
+                throw ex;
+            }
 
-                this.localStorage = JSON.parse(jsonRaw) as LocalStorage;
-            } else {
-                //New local storage
+            //New local storage
+            if(!this.localStorage) {
+                this.logger.warn(`${LOGGER_PREFIX}: Local storage doesn't exist. Pre-creating local storage...`);
                 this.localStorage = { list: [], secret: '' };
-                this.logger.warn(`${LOGGER_PREFIX}: Local storage doesn't exist, creating...`);
-    
-                await this.writeLocalStorage();
             }
         }
 
@@ -236,11 +238,11 @@ export class AzureStoragePlugin implements IPluginStorage<AzureStoragePluginConf
     }
 
     private async writeLocalStorage(): Promise<void> {
-        const jsonBuffer = Buffer.from(JSON.stringify(this.localStorage), 'utf-8');
-        await this.localStorageBlobClient.uploadData(jsonBuffer, {
-            blobHTTPHeaders: {
-                blobContentType: 'application/json'
-            }
-        });
+        try {
+            await this.localStorageProvider.saveLocalStorage(this.localStorage!);
+        } catch(ex) {
+            this.logger.error({ ex }, `${LOGGER_PREFIX}: Error in saving local storage from local storage provider! @{ex}`);
+            throw ex;
+        }
     }
 }

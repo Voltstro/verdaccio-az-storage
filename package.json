@@ -17,6 +17,7 @@
     "node": ">=18"
   },
   "dependencies": {
+    "@azure/app-configuration": "^1.6.1",
     "@azure/storage-blob": "^12.24.0",
     "@verdaccio/commons-api": "10.2.0",
     "@verdaccio/streams": "10.2.1"

@@ -4,4 +4,5 @@ export interface AzureStoragePluginConfig extends Config {
     connectionString: string;
     containerName: string;
     packagesDir: string;
+    appConfigConnectionString?: string;
 }
