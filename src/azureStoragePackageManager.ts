@@ -13,7 +13,7 @@ import {
 } from '@verdaccio/legacy-types';
 import { BlobHTTPHeaders, BlockBlobClient, ContainerClient } from '@azure/storage-blob';
 import { ReadTarball, UploadTarball } from '@verdaccio/streams';
-import { getConflict } from '@verdaccio/commons-api';
+import { getConflict, getInternalError, HEADERS } from '@verdaccio/commons-api';
 import { LOGGER_PREFIX } from './constants';
 import { AzureStoragePluginConfig } from './azureStoragePluginConfig';
 
@@ -92,23 +92,22 @@ export default class AzureStoragePackageManager implements ILocalPackageManager 
     public readTarball(name: string): ReadTarball {
         const readTarballStream = new ReadTarball({});
 
-        const promise = new Promise((resolve) => {
-            const packageClient = this.containerClient.getBlockBlobClient(join(this.config.packagesDir, this.packageName, name));
-            packageClient.downloadToBuffer().then((buffer) => resolve(buffer));
-        });
-
-        readTarballStream.emit('pipe', async () => {
-            try {
-                const data = await promise;
-                //src = data;
-                this.logger.debug(`${LOGGER_PREFIX}: Finished reading package tarball`);
-
-                return data;
-                //return true;
-            } catch(error) {
-                this.logger.error({ error }, `${LOGGER_PREFIX}: Error reading package tarball: @{error}`);
-                readTarballStream.emit('error', error);
+        const client = this.containerClient.getBlobClient(join(this.config.packagesDir, this.packageName, name));
+        client.exists().then((exists) => {
+            if(!exists) {
+                readTarballStream.emit('error', getInternalError('package tarball does not exist'));
+            } else {
+                client.download().then(result => {
+                    this.logger.debug(`${LOGGER_PREFIX}: Finished downloading package tarball, piping to stream.`);
+                    readTarballStream.emit('open');
+                    readTarballStream.emit(HEADERS.CONTENT_LENGTH, result.contentLength);
+                    result.readableStreamBody!.pipe(readTarballStream);
+                });
             }
+
+        }).catch((error) => {
+            this.logger.error({ error }, `${LOGGER_PREFIX}: Error reading package tarball! @{error}`);
+            readTarballStream.emit('error', error);
         });
 
         return readTarballStream;
