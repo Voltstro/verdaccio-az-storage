@@ -1,6 +1,7 @@
 import { LocalStorage, Logger } from '@verdaccio/legacy-types';
 import { AppConfigurationClient } from '@azure/app-configuration';
 import { ILocalStorageProvider } from '../localStorageProvider';
+import { AzureStoragePluginConfig } from '../../azureStoragePluginConfig';
 
 /**
  * ILocalStorageProvider that uses Azure App Configuration
@@ -8,16 +9,18 @@ import { ILocalStorageProvider } from '../localStorageProvider';
 export class AppConfigLocalStorageProvider implements ILocalStorageProvider {
     private readonly logger: Logger;
     private readonly client: AppConfigurationClient;
+    private readonly keyName: string;
 
-    constructor(logger: Logger, connectionString: string) {
+    constructor(logger: Logger, connectionString: string, config: AzureStoragePluginConfig, ) {
         this.logger = logger;
+        this.keyName = config.appConfigKeyName ?? 'verdaccio-db';
         this.client = new AppConfigurationClient(connectionString);
     }
     
     public async getLocalStorage(): Promise<LocalStorage | undefined> {
         try {
             const setting = await this.client.getConfigurationSetting({
-                key: 'verdaccio-db'
+                key: this.keyName
             }, {});
     
             const value = setting.value;
@@ -36,7 +39,7 @@ export class AppConfigLocalStorageProvider implements ILocalStorageProvider {
 
     public async saveLocalStorage(localStorage: LocalStorage): Promise<void> {
         await this.client.setConfigurationSetting({
-            key: 'verdaccio-db',
+            key: this.keyName,
             value: JSON.stringify(localStorage),
             contentType: 'application/json'
         });

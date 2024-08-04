@@ -77,7 +77,7 @@ export class AzureStoragePlugin implements IPluginStorage<AzureStoragePluginConf
         //Create local storage provider
         const appConfigConnectionString = process.env.AZ_STORAGE_APP_CONFIG_CONNECTION_STRING ?? this.config.appConfigConnectionString;
         if(appConfigConnectionString) {
-            this.localStorageProvider = new AppConfigLocalStorageProvider(this.logger, appConfigConnectionString);
+            this.localStorageProvider = new AppConfigLocalStorageProvider(this.logger, appConfigConnectionString, this.config);
             this.logger.info(`${LOGGER_PREFIX}: Using Azure app configuration for local storage`);
         } else {
             this.localStorageProvider = new StorageBlobLocalStorageProvider(this.logger, this.azureContainerClient);
