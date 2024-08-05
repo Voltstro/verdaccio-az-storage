@@ -92,6 +92,22 @@ export default class AzureStoragePackageManager implements ILocalPackageManager 
     public readTarball(name: string): ReadTarball {
         const readTarballStream = new ReadTarball({});
 
+        //HACK: 
+        //I want to use the 'tarball_url_redirect' experimental option so Azure can handle serving the big fat tarball files directly.
+        //But Verdaccio still calls readTarball method (for which I assume is to check if the package exists), 
+        //but that will cause a download of the package tarball by the server anyway. I don't care about having the server check if
+        //the tarball actually exists, since Azure storage will handle returning the 404.
+        //
+        //So workaround is this, Verdaccio only cares about 'open' being emitted from the stream, so return the stream,
+        //then 1ms later, emit 'open', which Verdaccio will then redirect
+        if('experiments' in this.config && 'tarball_url_redirect' in this.config.experiments) {
+            setTimeout(() => {
+                readTarballStream.emit('open');
+            }, 1);
+
+            return readTarballStream;
+        }
+       
         const client = this.containerClient.getBlobClient(join(this.config.packagesDir, this.packageName, name));
         client.exists().then((exists) => {
             if(!exists) {
