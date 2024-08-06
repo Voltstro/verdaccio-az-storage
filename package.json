@@ -7,10 +7,12 @@
     "name": "Voltstro",
     "email": "me@voltstro.dev"
   },
+  "homepage": "https://github.com/Voltstro/verdaccio-az-storage",
   "repository": {
     "url": "https://github.com/Voltstro/verdaccio-az-storage",
     "type": "git"
   },
+  "keywords": ["verdaccio", "plugin", "storage", "azure", "blob"],
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "engines": {
@@ -33,5 +35,8 @@
   "scripts": {
     "build": "tsc"
   },
+  "files": [
+    "/lib"
+  ],
   "packageManager": "yarn@1.22.22+sha1.ac34549e6aa8e7ead463a7407e1c7390f61a6610"
 }
