@@ -1,5 +1,10 @@
 # verdaccio-az-storage
 
+[![License](https://img.shields.io/github/license/voltstro/verdaccio-az-storage.svg)](https://github.com/Voltstro/verdaccio-az-storage/blob/master/LICENSE.md)
+[![NPM](https://img.shields.io/npm/v/verdaccio-az-storage)](https://www.npmjs.com/package/verdaccio-az-storage)
+[![Discord](https://img.shields.io/badge/Discord-Voltstro-7289da.svg?logo=discord)](https://discord.voltstro.dev) 
+[![YouTube](https://img.shields.io/badge/Youtube-Voltstro-red.svg?logo=youtube)](https://www.youtube.com/Voltstro)
+
 [Azure Storage](https://learn.microsoft.com/en-us/azure/storage/common/storage-introduction) plugin for [Verdaccio 5](https://verdaccio.org/).
 
 ## Features
