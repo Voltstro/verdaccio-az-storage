@@ -162,7 +162,7 @@ export class AzureStoragePlugin implements IPluginStorage<AzureStoragePluginConf
     /**
      * Searching
      */
-    public async search(onPackage: onSearchPackage, onEnd: onEndSearchPackage): Promise<void> {
+    public async search(onPackage: Function, onEnd: onEndSearchPackage): Promise<void> {
         try {
             const localStorage = await this.getOrCreateLocalStorage();
             const packageList = localStorage.list as string[];
@@ -178,16 +178,8 @@ export class AzureStoragePlugin implements IPluginStorage<AzureStoragePluginConf
                     const packageProperties = await packageBlobClient.getProperties();
                     onPackage({
                         name: packageName,
-                        time: {
-                            created: packageProperties.createdOn!.toISOString(),
-                            modified: packageProperties.lastModified!.toISOString(),
-                        },
-                        versions: {},
-                        'dist-tags': {},
-                        _distfiles: {},
-                        _attachments: {},
-                        _uplinks: {},
-                        _rev: ''
+                        path: packageName,
+                        time: packageProperties.lastModified!.getTime()
                     }, () => {});
                     this.logger.debug({ packageName }, `${LOGGER_PREFIX}: Got package @{packageName}`);
                     continue;
