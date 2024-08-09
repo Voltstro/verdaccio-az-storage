@@ -12,14 +12,20 @@
     "url": "https://github.com/Voltstro/verdaccio-az-storage",
     "type": "git"
   },
-  "keywords": ["verdaccio", "plugin", "storage", "azure", "blob"],
+  "keywords": [
+    "verdaccio",
+    "plugin",
+    "storage",
+    "azure",
+    "blob"
+  ],
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "engines": {
     "node": ">=18"
   },
   "dependencies": {
-    "@azure/app-configuration": "^1.6.1",
+    "@azure/app-configuration": "^1.7.0",
     "@azure/storage-blob": "^12.24.0",
     "@verdaccio/commons-api": "10.2.0",
     "@verdaccio/streams": "10.2.1"
