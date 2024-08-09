@@ -31,15 +31,16 @@
     "@verdaccio/streams": "10.2.1"
   },
   "devDependencies": {
-    "@types/node": "^20.0.0",
+    "@types/node": "^18.0.0",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
     "@verdaccio/legacy-types": "^1.0.1",
     "eslint": "^9.8.0",
+    "rimraf": "5.0.10",
     "typescript": "^5.5.4"
   },
   "scripts": {
-    "build": "tsc"
+    "build": "rimraf ./lib && tsc"
   },
   "files": [
     "/lib"
