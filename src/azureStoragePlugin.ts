@@ -7,8 +7,7 @@ import {
     Logger,
     PluginOptions,
     Token,
-    onEndSearchPackage,
-    onSearchPackage
+    onEndSearchPackage
 } from '@verdaccio/legacy-types';
 import { BlobServiceClient, ContainerClient } from '@azure/storage-blob';
 import { AzureStoragePluginConfig } from './azureStoragePluginConfig';

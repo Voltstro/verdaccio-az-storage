@@ -13,7 +13,7 @@ import {
 } from '@verdaccio/legacy-types';
 import { BlobHTTPHeaders, BlockBlobClient, ContainerClient } from '@azure/storage-blob';
 import { ReadTarball, UploadTarball } from '@verdaccio/streams';
-import { getConflict, getInternalError, HEADERS } from '@verdaccio/commons-api';
+import { getConflict, getNotFound, HEADERS } from '@verdaccio/commons-api';
 import { LOGGER_PREFIX } from './constants';
 import { AzureStoragePluginConfig } from './azureStoragePluginConfig';
 
@@ -39,49 +39,34 @@ export default class AzureStoragePackageManager implements ILocalPackageManager 
      */
     public writeTarball(name: string): IUploadTarball {
         const uploadStream = new UploadTarball({});
-
-        let streamEnded = 0;
-        uploadStream.on('end', () => {
-            streamEnded = 1;
-        });
+        uploadStream.pause();
+        const packagePath = join(this.config.packagesDir, this.packageName, name);
         
-        const promise = new Promise((resolve) => {
-            const packageClient = this.containerClient.getBlockBlobClient(join(this.config.packagesDir, this.packageName, name));
+        const packageClient = this.containerClient.getBlockBlobClient(packagePath);
 
-            const httpHeaders: BlobHTTPHeaders = {
-                blobContentType: 'application/x-compressed'
-            };
-    
-            if(this.config.cachePackageTime) {
-                httpHeaders.blobCacheControl = `public,max-time=${this.config.cachePackageTime}`;
-                this.logger.debug(`${LOGGER_PREFIX}: Using ${this.config.cachePackageTime} seconds as cache-control on package`);
-            }
-                
+        //Setup headers
+        const httpHeaders: BlobHTTPHeaders = {
+            blobContentType: 'application/x-compressed-tar'
+        };
+        if(this.config.cachePackageTime) {
+            httpHeaders.blobCacheControl = `public,max-time=${this.config.cachePackageTime}`;
+            this.logger.debug(`${LOGGER_PREFIX}: Using ${this.config.cachePackageTime} seconds as cache-control on package`);
+        }
 
+        //Timeout to allow streams to be ready
+        setTimeout(() => {
+            uploadStream.resume();
+            this.logger.info({ packagePath }, `${LOGGER_PREFIX}: Uploading package to @{packagePath}`);
             packageClient.uploadStream(uploadStream, undefined, undefined, {
                 blobHTTPHeaders: httpHeaders
             })
-                .then(() => resolve(undefined));
-        });
-
-        uploadStream.done = (): void => {
-            const onEnd = async (): Promise<void> => {
-                try {
-                    await promise;
-                    this.logger.debug(`${LOGGER_PREFIX}: Finished uploading package tarball`);
+                .then(() => {
                     uploadStream.emit('success');
-                } catch (error) {
-                    this.logger.error( { error }, `${LOGGER_PREFIX}: Error creating package tarball: @{error}`);
-                    uploadStream.emit('error', error);
-                }
-            };
-
-            if (streamEnded) {
-                onEnd();
-            } else {
-                uploadStream.on('end', onEnd);
-            }
-        };
+                    this.logger.info({ packagePath }, `${LOGGER_PREFIX}: Finished uploading package to @{packagePath}`);
+                })
+                .catch((error) => uploadStream.emit('error', error));
+            uploadStream.emit('open');
+        }, 1);
 
         return uploadStream;
     }
@@ -91,28 +76,20 @@ export default class AzureStoragePackageManager implements ILocalPackageManager 
      */
     public readTarball(name: string): ReadTarball {
         const readTarballStream = new ReadTarball({});
+        const packagePath = join(this.config.packagesDir, this.packageName, name);
 
-        //HACK: 
-        //I want to use the 'tarball_url_redirect' experimental option so Azure can handle serving the big fat tarball files directly.
-        //But Verdaccio still calls readTarball method (for which I assume is to check if the package exists), 
-        //but that will cause a download of the package tarball by the server anyway. I don't care about having the server check if
-        //the tarball actually exists, since Azure storage will handle returning the 404.
-        //
-        //So workaround is this, Verdaccio only cares about 'open' being emitted from the stream, so return the stream,
-        //then 1ms later, emit 'open', which Verdaccio will then redirect
-        if('experiments' in this.config && 'tarball_url_redirect' in this.config.experiments) {
-            setTimeout(() => {
-                readTarballStream.emit('open');
-            }, 1);
-
-            return readTarballStream;
-        }
-       
-        const client = this.containerClient.getBlobClient(join(this.config.packagesDir, this.packageName, name));
+        const client = this.containerClient.getBlobClient(packagePath);
         client.exists().then((exists) => {
             if(!exists) {
-                readTarballStream.emit('error', getInternalError('package tarball does not exist'));
+                readTarballStream.emit('error', getNotFound());
+                this.logger.warn({ packagePath }, `${LOGGER_PREFIX}: Package @{packagePath} does not exist.`);
             } else {
+                //With tarball_url_redirect enabled, just emit an open event so Verdaccio will redirect
+                if('experiments' in this.config && 'tarball_url_redirect' in this.config.experiments) {
+                    readTarballStream.emit('open');
+                    return;
+                }
+
                 client.download().then(result => {
                     this.logger.debug(`${LOGGER_PREFIX}: Finished downloading package tarball, piping to stream.`);
                     readTarballStream.emit('open');
@@ -133,6 +110,8 @@ export default class AzureStoragePackageManager implements ILocalPackageManager 
      * Reads package data
      */
     public readPackage(fileName: string, callback: ReadPackageCallback): void {
+        this.logger.debug({ fileName }, `${LOGGER_PREFIX}: readPackage for package @{fileName}`);
+
         this.getPackageData().then((packageData) => {
             this.logger.debug(`${LOGGER_PREFIX}: Finished reading package data`);
             callback(null, packageData);
@@ -146,6 +125,8 @@ export default class AzureStoragePackageManager implements ILocalPackageManager 
      * Creates package data
      */
     public createPackage(pkgName: string, value: Manifest, cb: CallbackAction): void {
+        this.logger.debug({ pkgName }, `${LOGGER_PREFIX}: createPackage for package @{pkgName}`);
+
         this.packageBlobClient.exists().then((exists) => {
             //Make sure package doesn't already exist
             if(exists) {
