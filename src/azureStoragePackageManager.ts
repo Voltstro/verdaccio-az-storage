@@ -31,7 +31,10 @@ export default class AzureStoragePackageManager implements ILocalPackageManager 
         this.packageName = packageName;
         this.config = config;
         this.containerClient = containerClient;
-        this.packageBlobClient = containerClient.getBlockBlobClient(join(this.config.packagesDir, packageName, 'package.json'));
+
+        const packagePath = join(this.config.packagesDir, packageName, 'package.json');
+        this.logger.debug({ packagePath }, `${LOGGER_PREFIX}: Got package from @{packagePath}`);
+        this.packageBlobClient = containerClient.getBlockBlobClient(packagePath);
     }
 
     /**

@@ -168,30 +168,34 @@ export class AzureStoragePlugin implements IPluginStorage<AzureStoragePluginConf
 
             this.logger.debug({ count: packageList.length }, `${LOGGER_PREFIX}: Got @{count} packages for searching.`);
 
-            for(const packageName of packageList) {
-                const packagePath = join(this.config.packagesDir, packageName, 'package.json');
-                const packageBlobClient = this.azureContainerClient.getBlobClient(packagePath);
-                const exists = await packageBlobClient.exists();
-
-                if(exists) {
-                    const packageProperties = await packageBlobClient.getProperties();
-                    onPackage({
-                        name: packageName,
-                        path: packageName,
-                        time: packageProperties.lastModified!.getTime()
-                    }, () => {});
-                    this.logger.debug({ packageName }, `${LOGGER_PREFIX}: Got package @{packageName}`);
-                    continue;
-                }
-
-                this.logger.warn({ packageName }, `${LOGGER_PREFIX}: Have package @{packageName}, which does not have matching package data!`);
-            }
+            const storageInfoMap = packageList.map(this.searchFetchInfo.bind(this, onPackage));
+            await Promise.all(storageInfoMap);
+            onEnd();
         } catch(ex) {
             onEnd(ex);
-            return;
         }
+    }
 
-        onEnd(null);
+    private async searchFetchInfo(onPackage: Function, packageName: string): Promise<void> {
+        return new Promise((resolve) => {
+            const packagePath = join(this.config.packagesDir, packageName, 'package.json');
+            const packageBlobClient = this.azureContainerClient.getBlobClient(packagePath);
+
+            packageBlobClient.getProperties()
+                .then((packageProperties) => {
+                    if(!packageProperties.lastModified)
+                        return resolve();
+
+                    return onPackage({
+                        name: packageName,
+                        path: packageName,
+                        time: packageProperties.lastModified.getTime()
+                    }, resolve);
+                })
+                .catch((error) => {
+                    this.logger.warn({ packageName, error }, `${LOGGER_PREFIX}: Failed getting @{packageName}! @{error}`);
+                });
+        });
     }
 
     public saveToken(): Promise<Token> {
