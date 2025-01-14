@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "@azure/app-configuration": "^1.7.0",
+    "@azure/identity": "^4.5.0",
     "@azure/storage-blob": "^12.24.0",
     "@verdaccio/commons-api": "10.2.0",
     "@verdaccio/streams": "10.2.1"
