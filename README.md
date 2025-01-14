@@ -25,6 +25,16 @@
 To contribute to this project pull the repo and make sure you have Docker / Podman installed.
 Copy verdaccio-config.yaml-example to verdaccio-config.yaml and update with your development connectionString and containerName.
 
+If you are wishing to use AZ CLI context for authentication, you have 2 options:
+
+1) Configure ./devcontainers/.env with your development Azure Subscription ID as below and your local AZ CLI context will be copied into the devcontainer and made active.
+
+```bash
+expected_az_context="00000000-0000-0000-0000-000000000000"
+```
+
+2) Load devcontainer as per usual and login locally within the devcontainer.
+
 ### Install
 
 Install like any other verdaccio plugin.
