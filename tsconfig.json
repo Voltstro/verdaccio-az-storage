@@ -9,7 +9,10 @@
     "outDir": "./lib",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "sourceMap": true,               // Generate source maps
+    "inlineSources": true,           // Include original source in the source map
+    "inlineSourceMap": false         // Avoid inline source maps for external debugging
   },
   "include": [
     "src/*.ts",

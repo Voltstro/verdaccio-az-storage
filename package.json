@@ -37,7 +37,8 @@
     "@verdaccio/legacy-types": "^1.0.1",
     "eslint": "^9.8.0",
     "rimraf": "5.0.10",
-    "typescript": "^5.5.4"
+    "typescript": "^5.5.4",
+    "verdaccio": "^6.0.5"
   },
   "scripts": {
     "build": "rimraf ./lib && tsc"

@@ -6,3 +6,5 @@ yarn-debug.log*
 yarn-error.log*
 *.orig
 /.idea
+
+verdaccio-config.yaml

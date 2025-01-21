@@ -1,0 +1,18 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "Build Plugin",
+        "type": "shell",
+        "command": "yarn build",
+        "problemMatcher": []
+      },
+      {
+        "label": "Link Plugin",
+        "type": "shell",
+        "command": "yarn link && yarn link verdaccio-az-storage",
+        "problemMatcher": [],
+        "dependsOn": "Build Plugin"
+      }
+    ]
+  }
