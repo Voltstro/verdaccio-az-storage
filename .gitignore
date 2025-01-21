@@ -10,3 +10,5 @@ yarn-error.log*
 verdaccio-config.yaml
 .devcontainer/.azure
 .devcontainer/.env
+
+htpasswd
