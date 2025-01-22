@@ -20,6 +20,11 @@
 - An Azure Storage account with a container
 - Verdaccio 5
 
+### Development
+
+To contribute to this project pull the repo and make sure you have Docker / Podman installed.
+Copy verdaccio-config.yaml-example to verdaccio-config.yaml and update with your development connectionString and containerName.
+
 ### Install
 
 Install like any other verdaccio plugin.

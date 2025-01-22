@@ -1,0 +1,18 @@
+{
+    "name": "verdaccio-az-storage",
+    "dockerComposeFile": "../docker-compose.yml",
+    "service": "devcontainer",
+    "workspaceFolder": "/app",
+    "overrideCommand": true,
+    "shutdownAction": "none",
+    "remoteUser": "node",
+    "features": {
+      "ghcr.io/devcontainers/features/git:1": {
+        "installGit": "true"
+      }
+    },
+    "mounts": [
+      "source=${env:HOME}/.ssh,target=/home/node/.ssh,type=bind,consistency=cached"
+    ],
+    "postCreateCommand": "yarn install"
+  }

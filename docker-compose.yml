@@ -1,0 +1,11 @@
+services:
+  devcontainer:
+    build:
+      context: ./.devcontainer
+      dockerfile: Dockerfile.devcontainer
+    volumes:
+      - ./:/app
+    ports:
+      - "4873:4873"
+    command: sleep infinity
+    restart: always
