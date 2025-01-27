@@ -8,3 +8,7 @@ yarn-error.log*
 /.idea
 
 verdaccio-config.yaml
+.devcontainer/.azure
+.devcontainer/.env
+
+htpasswd
