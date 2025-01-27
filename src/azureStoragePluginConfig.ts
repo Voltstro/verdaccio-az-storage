@@ -1,31 +1,10 @@
 import { Config } from '@verdaccio/legacy-types';
 
 export interface AzureStoragePluginConfig extends Config {
-
     /**
-     * Authentication method
+     * Connection string for the Azure storage account
      */
-        authMethod?: 'DefaultAzureCredential' | 'StorageSharedKeyCredential' | 'ConnectionString';
-
-    /**
-     * Connection string for the Azure storage account (Access Key + SAS)
-     */
-    connectionString?: string;
-
-    /**
-     * Account Key (StorageSharedKeyCredential)
-     */
-    accountKey?: string;
-
-    /**
-     * Account Name (DefaultAzureCredential + StorageSharedKeyCredential)
-     */
-    accountName?: string;
-
-    /**
-     * Account Domain (DefaultAzureCredential + StorageSharedKeyCredential)
-     */
-    accountDomain?: string;
+    connectionString: string;
 
     /**
      * Name of the container inside of the storage account

@@ -1,13 +1,6 @@
 plugins: ./lib
 listen:
   - 0.0.0.0:4873
-auth:
-  htpasswd:
-    file: ./htpasswd
-packages:
-  '**':
-    access: $authenticated
-    publish: $authenticated
 store:
   az-storage:
     enabled: true

@@ -14,8 +14,6 @@ import { AzureStoragePluginConfig } from './azureStoragePluginConfig';
 import AzureStoragePackageManager from './azureStoragePackageManager';
 import { LOGGER_PREFIX } from './constants';
 import { AppConfigLocalStorageProvider, ILocalStorageProvider, StorageBlobLocalStorageProvider } from './localStorage';
-import { setupConnectionStringAuth, setupDefaultAzureCredentialAuth, setupStorageSharedKeyCredential } from './azureAuth';
-
 
 export class AzureStoragePlugin implements IPluginStorage<AzureStoragePluginConfig> {
     public logger: Logger;
@@ -40,49 +38,39 @@ export class AzureStoragePlugin implements IPluginStorage<AzureStoragePluginConf
         //Copy config
         this.config = Object.assign(config, config.store['az-storage']);
 
-        const authMethod = process.env.AZ_STORAGE_AUTH_METHOD || this.config.authMethod || 'ConnectionString';
-        const containerName = process.env.AZ_STORAGE_CONTAINER_NAME || this.config.containerName;
-        const accountName = process.env.AZ_STORAGE_ACCOUNT_NAME || this.config.accountName;
-        const accountKey = process.env.AZ_STORAGE_ACCOUNT_KEY || this.config.accountKey;
-        const accountDomain = process.env.AZ_STORAGE_ACCOUNT_DOMAIN || this.config.accountDomain || 'blob.core.windows.net';
+        //Try to get connection string for storage account
+        let connectionString = process.env.AZ_STORAGE_CONNECTION_STRING;
+        if(!connectionString)
+        {
+            this.logger.debug(`${LOGGER_PREFIX}: Reading connection string from config instead of environment variable`);
+            connectionString = this.config.connectionString;
+        }
 
-        switch (authMethod) {
-            case 'ConnectionString': {
-                const { blobClient, containerClient } = setupConnectionStringAuth(
-                    this.logger,
-                    process.env.AZ_STORAGE_CONNECTION_STRING || this.config.connectionString!,
-                    containerName
-                );
-                this.azureBlobClient = blobClient;
-                this.azureContainerClient = containerClient;
-                break;
-            }
-    
-            case 'DefaultAzureCredential': {
-                if (!accountName) {
-                        throw new Error('Account name is required!');
-                }
-                const { blobClient, containerClient } = setupDefaultAzureCredentialAuth(this.logger, accountName, containerName, accountDomain);
-                this.azureBlobClient = blobClient;
-                this.azureContainerClient = containerClient;
-                break;
-            }
-    
-            case 'StorageSharedKeyCredential':
-                if (!accountName) {
-                        throw new Error('Account name is required!');
-                    }
-                if (!accountKey) {
-                    throw new Error('Account key is required!');
-                }
-                const { blobClient, containerClient } = setupStorageSharedKeyCredential(this.logger, accountName, accountKey, containerName, accountDomain);
-                this.azureBlobClient = blobClient;
-                this.azureContainerClient = containerClient;
-                break;
-    
-            default:
-                this.logger.error(`${LOGGER_PREFIX}: Unsupported authentication method: ${authMethod}`);
-                throw new Error(`Unsupported authentication method: ${authMethod}`);
+        //None is set at all, quit
+        if(!connectionString) {
+            this.logger.error(`${LOGGER_PREFIX}: Connection string is required! Either set 'connectionString' in the config, or set 'AZ_STORAGE_CONNECTION_STRING' environment variable.`);
+            throw new Error();
+        }
+
+        //Container name
+        if(!this.config.containerName) {
+            this.logger.error(`${LOGGER_PREFIX}: Container name is required! Set 'containerName' in the config.`);
+            throw new Error();
+        }
+
+        //Pre-create clients
+        try {
+            this.azureBlobClient = BlobServiceClient.fromConnectionString(connectionString);
+        } catch(ex) {
+            this.logger.error({ ex }, `${LOGGER_PREFIX}: Error creating Azure blob client! @{ex}`);
+            throw ex;
+        }
+
+        try {
+            this.azureContainerClient = this.azureBlobClient.getContainerClient(config.containerName);
+        } catch(ex) {
+            this.logger.error({ ex }, `${LOGGER_PREFIX}: Error creating Azure container client! Does the container exist? @{ex}`);
+            throw ex;
         }
 
         //Create local storage provider

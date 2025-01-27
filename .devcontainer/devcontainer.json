@@ -1,14 +1,10 @@
 {
     "name": "verdaccio-az-storage",
-    "initializeCommand": "bash -i ./.devcontainer/preflight_checks.sh",
     "dockerComposeFile": "../docker-compose.yml",
     "service": "devcontainer",
     "workspaceFolder": "/app",
     "overrideCommand": true,
     "shutdownAction": "none",
-    "extensions": [
-      "ms-azuretools.vscode-docker",
-    ],
     "remoteUser": "node",
     "features": {
       "ghcr.io/devcontainers/features/git:1": {
