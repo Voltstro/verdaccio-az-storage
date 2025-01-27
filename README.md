@@ -5,7 +5,7 @@
 [![Discord](https://img.shields.io/badge/Discord-Voltstro-7289da.svg?logo=discord)](https://discord.voltstro.dev) 
 [![YouTube](https://img.shields.io/badge/Youtube-Voltstro-red.svg?logo=youtube)](https://www.youtube.com/Voltstro)
 
-[Azure Storage](https://learn.microsoft.com/en-us/azure/storage/common/storage-introduction) plugin for [Verdaccio 5](https://verdaccio.org/).
+[Azure Storage](https://learn.microsoft.com/en-us/azure/storage/common/storage-introduction) plugin for [Verdaccio 6](https://verdaccio.org/).
 
 ## Features
 
@@ -18,7 +18,7 @@
 ### Prerequisites
 
 - An Azure Storage account with a container
-- Verdaccio 5
+- Verdaccio 6
 
 ### Development
 
