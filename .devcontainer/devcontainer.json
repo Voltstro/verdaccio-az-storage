@@ -7,7 +7,7 @@
     "overrideCommand": true,
     "shutdownAction": "none",
     "extensions": [
-      "ms-azuretools.vscode-docker",
+        "ms-azuretools.vscode-docker"
     ],
     "remoteUser": "node",
     "features": {

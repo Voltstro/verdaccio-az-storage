@@ -1,11 +1,10 @@
-import { Config } from '@verdaccio/legacy-types';
+import type { Config } from '@verdaccio/legacy-types';
 
 export interface AzureStoragePluginConfig extends Config {
-
     /**
      * Authentication method
      */
-        authMethod?: 'DefaultAzureCredential' | 'StorageSharedKeyCredential' | 'ConnectionString';
+    authMethod?: 'DefaultAzureCredential' | 'StorageSharedKeyCredential' | 'ConnectionString';
 
     /**
      * Connection string for the Azure storage account (Access Key + SAS)

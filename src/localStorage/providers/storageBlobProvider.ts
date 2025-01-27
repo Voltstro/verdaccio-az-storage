@@ -1,6 +1,6 @@
-import { LocalStorage, Logger } from '@verdaccio/legacy-types';
-import { ILocalStorageProvider } from '../localStorageProvider';
-import { BlockBlobClient, ContainerClient } from '@azure/storage-blob';
+import type { BlockBlobClient, ContainerClient } from '@azure/storage-blob';
+import type { LocalStorage, Logger } from '@verdaccio/legacy-types';
+import type { ILocalStorageProvider } from '../localStorageProvider';
 import { LOGGER_PREFIX } from '../../constants';
 
 const DB_FILE_NAME = '.verdaccio-db.json';

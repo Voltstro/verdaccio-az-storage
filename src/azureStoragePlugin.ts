@@ -1,5 +1,6 @@
-import { join } from 'path';
-import {
+import { join } from 'node:path';
+import type { BlobServiceClient, ContainerClient } from '@azure/storage-blob';
+import type {
     Config,
     IPackageStorage,
     IPluginStorage,
@@ -7,15 +8,21 @@ import {
     Logger,
     PluginOptions,
     Token,
-    onEndSearchPackage
+    onEndSearchPackage,
 } from '@verdaccio/legacy-types';
-import { BlobServiceClient, ContainerClient } from '@azure/storage-blob';
-import { AzureStoragePluginConfig } from './azureStoragePluginConfig';
+import {
+    setupConnectionStringAuth,
+    setupDefaultAzureCredentialAuth,
+    setupStorageSharedKeyCredential,
+} from './azureAuth';
 import AzureStoragePackageManager from './azureStoragePackageManager';
+import type { AzureStoragePluginConfig } from './azureStoragePluginConfig';
 import { LOGGER_PREFIX } from './constants';
-import { AppConfigLocalStorageProvider, ILocalStorageProvider, StorageBlobLocalStorageProvider } from './localStorage';
-import { setupConnectionStringAuth, setupDefaultAzureCredentialAuth, setupStorageSharedKeyCredential } from './azureAuth';
-
+import {
+    AppConfigLocalStorageProvider,
+    type ILocalStorageProvider,
+    StorageBlobLocalStorageProvider,
+} from './localStorage';
 
 export class AzureStoragePlugin implements IPluginStorage<AzureStoragePluginConfig> {
     public logger: Logger;
@@ -33,10 +40,12 @@ export class AzureStoragePlugin implements IPluginStorage<AzureStoragePluginConf
         this.logger = options.logger;
 
         if (!config) {
-            this.logger.error('Config for Azure storage plugin is missing! Add `store.az-storage` to your config file!');
+            this.logger.error(
+                'Config for Azure storage plugin is missing! Add `store.az-storage` to your config file!',
+            );
             throw new Error();
         }
-            
+
         //Copy config
         this.config = Object.assign(config, config.store['az-storage']);
 
@@ -44,51 +53,69 @@ export class AzureStoragePlugin implements IPluginStorage<AzureStoragePluginConf
         const containerName = process.env.AZ_STORAGE_CONTAINER_NAME || this.config.containerName;
         const accountName = process.env.AZ_STORAGE_ACCOUNT_NAME || this.config.accountName;
         const accountKey = process.env.AZ_STORAGE_ACCOUNT_KEY || this.config.accountKey;
-        const accountDomain = process.env.AZ_STORAGE_ACCOUNT_DOMAIN || this.config.accountDomain || 'blob.core.windows.net';
+        const accountDomain =
+            process.env.AZ_STORAGE_ACCOUNT_DOMAIN || this.config.accountDomain || 'blob.core.windows.net';
 
         switch (authMethod) {
             case 'ConnectionString': {
                 const { blobClient, containerClient } = setupConnectionStringAuth(
                     this.logger,
                     process.env.AZ_STORAGE_CONNECTION_STRING || this.config.connectionString!,
-                    containerName
+                    containerName,
                 );
                 this.azureBlobClient = blobClient;
                 this.azureContainerClient = containerClient;
                 break;
             }
-    
+
             case 'DefaultAzureCredential': {
                 if (!accountName) {
-                        throw new Error('Account name is required!');
+                    throw new Error('Account name is required!');
                 }
-                const { blobClient, containerClient } = setupDefaultAzureCredentialAuth(this.logger, accountName, containerName, accountDomain);
+                const { blobClient, containerClient } = setupDefaultAzureCredentialAuth(
+                    this.logger,
+                    accountName,
+                    containerName,
+                    accountDomain,
+                );
                 this.azureBlobClient = blobClient;
                 this.azureContainerClient = containerClient;
                 break;
             }
-    
-            case 'StorageSharedKeyCredential':
+
+            case 'StorageSharedKeyCredential': {
                 if (!accountName) {
-                        throw new Error('Account name is required!');
-                    }
+                    throw new Error('Account name is required!');
+                }
                 if (!accountKey) {
                     throw new Error('Account key is required!');
                 }
-                const { blobClient, containerClient } = setupStorageSharedKeyCredential(this.logger, accountName, accountKey, containerName, accountDomain);
+                const { blobClient, containerClient } = setupStorageSharedKeyCredential(
+                    this.logger,
+                    accountName,
+                    accountKey,
+                    containerName,
+                    accountDomain,
+                );
                 this.azureBlobClient = blobClient;
                 this.azureContainerClient = containerClient;
                 break;
-    
+            }
+
             default:
                 this.logger.error(`${LOGGER_PREFIX}: Unsupported authentication method: ${authMethod}`);
                 throw new Error(`Unsupported authentication method: ${authMethod}`);
         }
 
         //Create local storage provider
-        const appConfigConnectionString = process.env.AZ_STORAGE_APP_CONFIG_CONNECTION_STRING ?? this.config.appConfigConnectionString;
-        if(appConfigConnectionString) {
-            this.localStorageProvider = new AppConfigLocalStorageProvider(this.logger, appConfigConnectionString, this.config);
+        const appConfigConnectionString =
+            process.env.AZ_STORAGE_APP_CONFIG_CONNECTION_STRING ?? this.config.appConfigConnectionString;
+        if (appConfigConnectionString) {
+            this.localStorageProvider = new AppConfigLocalStorageProvider(
+                this.logger,
+                appConfigConnectionString,
+                this.config,
+            );
             this.logger.info(`${LOGGER_PREFIX}: Using Azure app configuration for local storage`);
         } else {
             this.localStorageProvider = new StorageBlobLocalStorageProvider(this.logger, this.azureContainerClient);
@@ -96,8 +123,7 @@ export class AzureStoragePlugin implements IPluginStorage<AzureStoragePluginConf
         }
 
         //Default value for packagesDir
-        if(!this.config.packagesDir)
-            this.config.packagesDir = 'packages';
+        if (!this.config.packagesDir) this.config.packagesDir = 'packages';
     }
 
     /**
@@ -183,7 +209,7 @@ export class AzureStoragePlugin implements IPluginStorage<AzureStoragePluginConf
             const storageInfoMap = packageList.map(this.searchFetchInfo.bind(this, onPackage));
             await Promise.all(storageInfoMap);
             onEnd();
-        } catch(ex) {
+        } catch (ex) {
             onEnd(ex);
         }
     }
@@ -193,19 +219,25 @@ export class AzureStoragePlugin implements IPluginStorage<AzureStoragePluginConf
             const packagePath = join(this.config.packagesDir, packageName, 'package.json');
             const packageBlobClient = this.azureContainerClient.getBlobClient(packagePath);
 
-            packageBlobClient.getProperties()
+            packageBlobClient
+                .getProperties()
                 .then((packageProperties) => {
-                    if(!packageProperties.lastModified)
-                        return resolve();
+                    if (!packageProperties.lastModified) return resolve();
 
-                    return onPackage({
-                        name: packageName,
-                        path: packageName,
-                        time: packageProperties.lastModified.getTime()
-                    }, resolve);
+                    return onPackage(
+                        {
+                            name: packageName,
+                            path: packageName,
+                            time: packageProperties.lastModified.getTime(),
+                        },
+                        resolve,
+                    );
                 })
                 .catch((error) => {
-                    this.logger.warn({ packageName, error }, `${LOGGER_PREFIX}: Failed getting @{packageName}! @{error}`);
+                    this.logger.warn(
+                        { packageName, error },
+                        `${LOGGER_PREFIX}: Failed getting @{packageName}! @{error}`,
+                    );
                 });
         });
     }
@@ -226,16 +258,19 @@ export class AzureStoragePlugin implements IPluginStorage<AzureStoragePluginConf
      * Gets (or creates if needed) local storage
      */
     private async getOrCreateLocalStorage(): Promise<LocalStorage> {
-        if(!this.localStorage) {
+        if (!this.localStorage) {
             try {
                 this.localStorage = await this.localStorageProvider.getLocalStorage();
-            } catch(ex) {
-                this.logger.error({ ex }, `${LOGGER_PREFIX}: Error in getting local storage from local storage provider! @{ex}`);
+            } catch (ex) {
+                this.logger.error(
+                    { ex },
+                    `${LOGGER_PREFIX}: Error in getting local storage from local storage provider! @{ex}`,
+                );
                 throw ex;
             }
 
             //New local storage
-            if(!this.localStorage) {
+            if (!this.localStorage) {
                 this.logger.warn(`${LOGGER_PREFIX}: Local storage doesn't exist. Pre-creating local storage...`);
                 this.localStorage = { list: [], secret: '' };
             }
@@ -247,8 +282,11 @@ export class AzureStoragePlugin implements IPluginStorage<AzureStoragePluginConf
     private async writeLocalStorage(): Promise<void> {
         try {
             await this.localStorageProvider.saveLocalStorage(this.localStorage!);
-        } catch(ex) {
-            this.logger.error({ ex }, `${LOGGER_PREFIX}: Error in saving local storage from local storage provider! @{ex}`);
+        } catch (ex) {
+            this.logger.error(
+                { ex },
+                `${LOGGER_PREFIX}: Error in saving local storage from local storage provider! @{ex}`,
+            );
             throw ex;
         }
     }

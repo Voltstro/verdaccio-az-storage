@@ -1,4 +1,4 @@
-import { LocalStorage } from '@verdaccio/legacy-types';
+import type { LocalStorage } from '@verdaccio/legacy-types';
 
 /**
  * Interface for local storage providers
