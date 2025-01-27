@@ -1,6 +1,6 @@
 import { DefaultAzureCredential } from '@azure/identity';
 import { BlobServiceClient, type ContainerClient, StorageSharedKeyCredential } from '@azure/storage-blob';
-import type { Logger } from '@verdaccio/legacy-types';
+import type { Logger } from '@verdaccio/types';
 import { LOGGER_PREFIX } from './constants';
 
 export function setupConnectionStringAuth(

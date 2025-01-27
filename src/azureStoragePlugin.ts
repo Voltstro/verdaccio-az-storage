@@ -9,7 +9,7 @@ import type {
     PluginOptions,
     Token,
     onEndSearchPackage,
-} from '@verdaccio/legacy-types';
+} from '@verdaccio/types';
 import {
     setupConnectionStringAuth,
     setupDefaultAzureCredentialAuth,

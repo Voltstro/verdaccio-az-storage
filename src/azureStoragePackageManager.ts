@@ -12,7 +12,7 @@ import type {
     ReadPackageCallback,
     StorageUpdateCallback,
     StorageWriteCallback,
-} from '@verdaccio/legacy-types';
+} from '@verdaccio/types';
 import { ReadTarball, UploadTarball } from '@verdaccio/streams';
 import type { AzureStoragePluginConfig } from './azureStoragePluginConfig';
 import { LOGGER_PREFIX } from './constants';

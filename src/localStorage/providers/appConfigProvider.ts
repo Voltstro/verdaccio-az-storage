@@ -1,5 +1,5 @@
 import { AppConfigurationClient } from '@azure/app-configuration';
-import type { LocalStorage, Logger } from '@verdaccio/legacy-types';
+import type { LocalStorage, Logger } from '@verdaccio/types';
 import type { ILocalStorageProvider } from '../localStorageProvider';
 import type { AzureStoragePluginConfig } from '../../azureStoragePluginConfig';
 

@@ -1,4 +1,4 @@
-import type { Config } from '@verdaccio/legacy-types';
+import type { Config } from '@verdaccio/types';
 
 export interface AzureStoragePluginConfig extends Config {
     /**

@@ -1,5 +1,5 @@
 import type { BlockBlobClient, ContainerClient } from '@azure/storage-blob';
-import type { LocalStorage, Logger } from '@verdaccio/legacy-types';
+import type { LocalStorage, Logger } from '@verdaccio/types';
 import type { ILocalStorageProvider } from '../localStorageProvider';
 import { LOGGER_PREFIX } from '../../constants';
 

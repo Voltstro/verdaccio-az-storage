@@ -352,11 +352,6 @@
   dependencies:
     lockfile "1.0.4"
 
-"@verdaccio/legacy-types@~1.0.1":
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/@verdaccio/legacy-types/-/legacy-types-1.0.1.tgz#87f7866a0be2ea61c2f99f5f7ff8ae351987f832"
-  integrity sha512-6r9VslR366hF0XPsrQslxiVelCXFZlnJdg54Iqyr60aYyOgqA9+p3/5P7QBO+n1ZDh51aHGJhOdQoQQb2CdxCA==
-
 "@verdaccio/loaders@8.0.0-next-8.4":
   version "8.0.0-next-8.4"
   resolved "https://registry.yarnpkg.com/@verdaccio/loaders/-/loaders-8.0.0-next-8.4.tgz#98f08037e5889d3b3050572657b63edeccaad898"
@@ -454,6 +449,11 @@
     gunzip-maybe "^1.4.2"
     lodash "4.17.21"
     tar-stream "^3.1.7"
+
+"@verdaccio/types@^10.8.0":
+  version "10.8.0"
+  resolved "https://registry.yarnpkg.com/@verdaccio/types/-/types-10.8.0.tgz#34451735facf94320a0a777f0e80f98108bbc486"
+  integrity sha512-FuJyCRFPdy+gqCi0v29dE1xKn99Ztq6fuY9fb7ezeP1SRbUL/hgDaNkpjYvSIMCyb+dLFKOFBeZPyIUBLOSdlA==
 
 "@verdaccio/ui-theme@8.0.0-next-8.7":
   version "8.0.0-next-8.7"
