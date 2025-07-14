@@ -59,4 +59,7 @@ else
     fi
 fi
 
+# Install package manager
+corepack install
+
 exit ${exit_code}

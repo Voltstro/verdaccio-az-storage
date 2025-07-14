@@ -18,5 +18,5 @@
     "mounts": [
       "source=${env:HOME}/.ssh,target=/home/node/.ssh,type=bind,consistency=cached"
     ],
-    "postCreateCommand": "yarn install"
+    "postCreateCommand": "pnpm install"
   }

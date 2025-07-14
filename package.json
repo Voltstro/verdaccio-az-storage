@@ -25,19 +25,20 @@
     "node": ">=18"
   },
   "dependencies": {
-    "@azure/app-configuration": "~1.8.0",
-    "@azure/identity": "~4.6.0",
-    "@azure/storage-blob": "~12.26.0",
+    "@azure/app-configuration": "~1.9.0",
+    "@azure/identity": "~4.10.2",
+    "@azure/storage-blob": "~12.27.0",
     "@verdaccio/commons-api": "~10.2.0",
     "@verdaccio/streams": "~10.2.1"
   },
   "devDependencies": {
-    "@biomejs/biome": "1.9.4",
+    "@biomejs/biome": "2.1.1",
     "@types/node": "^18.0.0",
     "@verdaccio/types": "^10.8.0",
     "rimraf": "~6.0.1",
-    "typescript": "~5.7.3",
-    "verdaccio": "~6.0.5"
+    "typescript": "~5.8.3",
+    "verdaccio": "~6.1.5",
+    "verdaccio-az-storage": "link:"
   },
   "scripts": {
     "build": "rimraf ./lib && tsc",
@@ -46,5 +47,5 @@
   "files": [
     "/lib"
   ],
-  "packageManager": "yarn@1.22.22+sha1.ac34549e6aa8e7ead463a7407e1c7390f61a6610"
+  "packageManager": "pnpm@10.13.1+sha512.37ebf1a5c7a30d5fabe0c5df44ee8da4c965ca0c5af3dbab28c3a1681b70a256218d05c81c9c0dcf767ef6b8551eb5b960042b9ed4300c59242336377e01cfad"
 }

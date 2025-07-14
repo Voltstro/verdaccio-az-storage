@@ -4,15 +4,8 @@
       {
         "label": "Build Plugin",
         "type": "shell",
-        "command": "yarn build",
+        "command": "pnpm run build",
         "problemMatcher": []
-      },
-      {
-        "label": "Link Plugin",
-        "type": "shell",
-        "command": "yarn link && yarn link verdaccio-az-storage",
-        "problemMatcher": [],
-        "dependsOn": "Build Plugin"
       }
     ]
   }

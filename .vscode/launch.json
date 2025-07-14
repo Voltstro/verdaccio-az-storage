@@ -5,7 +5,7 @@
       "type": "node",
       "request": "launch",
       "name": "Launch Verdaccio with Plugin",
-      "program": "${workspaceFolder}/node_modules/.bin/verdaccio",
+      "program": "${workspaceFolder}/node_modules/verdaccio/bin/verdaccio",
       "args": ["--config", "${workspaceFolder}/verdaccio-config.yaml"],
       "cwd": "${workspaceFolder}",
       "runtimeArgs": ["--nolazy", "--inspect-brk"],
@@ -16,7 +16,7 @@
       },
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen",
-      "preLaunchTask": "Link Plugin"
+      "preLaunchTask": "Build Plugin"
     }
   ]
 }
