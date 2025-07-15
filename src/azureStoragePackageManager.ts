@@ -209,7 +209,7 @@ export default class AzureStoragePackageManager implements ILocalPackageManager 
     /**
      * Saves package data
      */
-    public savePackage(fileName: string, json: Manifest, callback: CallbackAction): void {
+    public savePackage(_fileName: string, json: Manifest, callback: CallbackAction): void {
         this.writePackageData(json)
             .then(() => {
                 this.logger.debug(`${LOGGER_PREFIX}: Finished saving package data`);
@@ -240,8 +240,6 @@ export default class AzureStoragePackageManager implements ILocalPackageManager 
                 _uplinks: {},
                 _rev: '',
             };
-
-            await this.writePackageData(packageData);
         }
 
         return packageData;
