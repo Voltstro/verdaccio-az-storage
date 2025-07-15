@@ -20,21 +20,6 @@
 - An Azure Storage account with a container
 - Verdaccio 6
 
-### Development
-
-To contribute to this project pull the repo and make sure you have Docker / Podman installed.
-Copy verdaccio-config.yaml-example to verdaccio-config.yaml and update with your development connectionString and containerName.
-
-If you are wishing to use AZ CLI context for authentication, you have 2 options:
-
-1) Configure ./devcontainers/.env with your development Azure Subscription ID as below and your local AZ CLI context will be copied into the devcontainer and made active.
-
-```bash
-expected_az_context="00000000-0000-0000-0000-000000000000"
-```
-
-2) Load devcontainer as per usual and login locally within the devcontainer.
-
 ### Install
 
 Install like any other verdaccio plugin.
@@ -72,6 +57,31 @@ store:
     appConfigKeyName: verdaccio-db
 
 ```
+
+### Development
+
+To contribute to this project pull the repo. 
+
+#### Dev Containers
+
+Make sure you have Docker / Podman installed. If you are wishing to use AZ CLI context for authentication, you have 2 options:
+
+1) Configure ./devcontainers/.env with your development Azure Subscription ID as below and your local AZ CLI context will be copied into the devcontainer and made active.
+
+    ```bash
+    expected_az_context="00000000-0000-0000-0000-000000000000"
+    ```
+
+2) Load devcontainer as per usual and login locally within the devcontainer.
+
+#### Local
+
+1) We use pnpm for package management. Install all packages using install.
+    ```
+    pnpm install
+    ```
+
+2) Either build the project using the build script, or use VSCode's Run and Debug (which will build the project and have debugging support).
 
 ## Authors
 
